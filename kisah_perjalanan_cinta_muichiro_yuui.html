@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Di Balik Kabut, Ada Kamu — Muichiro & Yuui</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Cinzel, Cormorant Garamond & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['"Cinzel"', 'serif'],
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        mist: {
+                            50: '#f0fdf9',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            950: '#07191d',
+                        },
+                        night: {
+                            900: '#0b131e',
+                            950: '#05090f',
+                        }
+                    },
+                    animation: {
+                        'float-slow': 'float 8s ease-in-out infinite',
+                        'float-medium': 'float 6s ease-in-out infinite',
+                        'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
+                        'mist-drift': 'mistDrift 25s linear infinite',
+                        'origami-glide': 'origamiGlide 18s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-14px)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: 0.4, transform: 'scale(1)' },
+                            '50%': { opacity: 0.85, transform: 'scale(1.06)' },
+                        },
+                        mistDrift: {
+                            '0%': { transform: 'translateX(-12%) translateY(0)' },
+                            '50%': { transform: 'translateX(12%) translateY(-18px)' },
+                            '100%': { transform: 'translateX(-12%) translateY(0)' },
+                        },
+                        origamiGlide: {
+                            '0%, 100%': { transform: 'translate(0, 0) rotate(-4deg)' },
+                            '50%': { transform: 'translate(18px, -22px) rotate(6deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Kustomisasi Tampilan Kabut & Lapisan Kaca */
+        body {
+            background-color: #05090f;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .mist-glass {
+            background: rgba(14, 42, 48, 0.38);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(153, 246, 228, 0.16);
+            box-shadow: 0 10px 36px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        .mist-glass-hover {
+            transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .mist-glass-hover:hover {
+            background: rgba(19, 62, 68, 0.52);
+            border-color: rgba(153, 246, 228, 0.42);
+            transform: translateY(-5px);
+            box-shadow: 0 14px 42px -8px rgba(94, 234, 212, 0.25);
+        }
+
+        /* Animasi Muncul saat Scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Cahaya Kabut Ambient di Latar Belakang */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(95px);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Garis Timeline Kabut */
+        .timeline-line {
+            background: linear-gradient(180deg, rgba(94,234,212,0) 0%, rgba(94,234,212,0.55) 15%, rgba(167,243,208,0.65) 85%, rgba(94,234,212,0) 100%);
+        }
+
+        /* Efek Amplop Surat Cinta Interaktif */
+        .envelope-flap {
+            transform-origin: top;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .envelope-open .envelope-flap {
+            transform: rotateX(180deg);
+        }
+        .letter-sheet {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease, margin-top 0.7s ease;
+        }
+        .envelope-open .letter-sheet {
+            max-height: 900px;
+            opacity: 1;
+            margin-top: 1.75rem;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-mist-300 selection:text-night-950">
+
+    <!-- Canvas Partikel Kabut & Origami Kertas Terbang (Interactive Background) -->
+    <canvas id="mistCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+    <!-- Cahaya Kabut Ambient -->
+    <div class="ambient-orb w-96 h-96 bg-mist-500/20 top-[-5%] left-[-10%] animate-mist-drift"></div>
+    <div class="ambient-orb w-[34rem] h-[34rem] bg-emerald-400/12 bottom-[8%] right-[-10%] animate-float-slow"></div>
+    <div class="ambient-orb w-80 h-80 bg-cyan-500/15 top-[42%] left-[28%] animate-pulse-glow"></div>
+
+    <!-- Navigasi Minimalis Mengambang + Pemutar Musik Ambient -->
+    <nav class="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-3xl">
+        <div class="mist-glass rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs sm:text-sm">
+            <a href="#beranda" class="font-display text-base sm:text-lg font-semibold text-mist-200 tracking-wider flex items-center gap-2">
+                <i data-lucide="cloud" class="w-4 h-4 text-mist-300"></i>
+                <span>M & Y</span>
+            </a>
+
+            <div class="hidden sm:flex items-center gap-6 text-slate-300">
+                <a href="#kisah" class="hover:text-mist-200 transition-colors">Jejak Kisah</a>
+                <a href="#awan-kenangan" class="hover:text-mist-200 transition-colors">Awan Pesan</a>
+                <a href="#galeri-harapan" class="hover:text-mist-200 transition-colors">Harapan</a>
+                <a href="#surat-cinta" class="hover:text-mist-200 transition-colors">Surat Cinta</a>
+            </div>
+
+            <!-- Tombol Pemutar Musik Ambient (Web Audio API) -->
+            <button id="musicToggleBtn" onclick="toggleAmbientMusic()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-mist-400/15 hover:bg-mist-400/25 border border-mist-300/30 text-mist-100 transition-all cursor-pointer" title="Putar atau Jeda Melodi Kabut">
+                <span id="musicEqualizer" class="flex items-end gap-0.5 h-3">
+                    <span class="w-0.5 h-1.5 bg-mist-300 rounded-full transition-all"></span>
+                    <span class="w-0.5 h-3 bg-mist-300 rounded-full transition-all"></span>
+                    <span class="w-0.5 h-2 bg-mist-300 rounded-full transition-all"></span>
+                </span>
+                <span id="musicLabel" class="text-xs font-medium">Putar Melodi</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 1. HERO SECTION -->
+    <header id="beranda" class="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 pb-14 z-10">
+        <!-- Ornamen Origami Kertas Melayang SVG -->
+        <div class="mb-5 inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full mist-glass text-mist-200 text-xs tracking-[0.2em] uppercase animate-float-medium">
+            <svg class="w-4 h-4 text-mist-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M2 12L22 3L15 21L11 13L2 12Z" stroke-linejoin="round"/>
+                <path d="M22 3L11 13" stroke-linejoin="round"/>
+            </svg>
+            <span>Harmoni di Balik Kabut Pagi</span>
+        </div>
+
+        <h1 class="font-display text-4xl sm:text-6xl md:text-7xl font-semibold text-white tracking-wide leading-tight">
+            Muichiro <span class="font-serif italic font-normal text-mist-300">&amp;</span> Yuui
+        </h1>
+
+        <p class="font-serif italic text-2xl sm:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-mist-100 via-emerald-200 to-teal-300 mt-3 max-w-2xl">
+            "Kabut yang dulunya hampa dan tanpa arah, kini menemukan tempat pulang sejak bertemu denganmu."
+        </p>
+
+        <p class="mt-6 max-w-xl text-slate-300/90 text-sm sm:text-base font-light leading-relaxed">
+            Dulu, duniaku hanyalah hamparan kabut dingin yang sunyi—tempat segala sesuatu mudah berlalu dan terlupa. Namun sejak kehadiranmu, Yuui, setiap gumpalan awan berubah menjadi hangat, dan namamu menjadi satu-satunya hal yang tak akan pernah mampu aku lupakan.
+        </p>
+
+        <!-- Badge Pasangan -->
+        <div class="mt-8 flex items-center justify-center gap-4 text-sm sm:text-base font-serif italic text-mist-200">
+            <span class="px-5 py-1.5 rounded-full bg-mist-900/60 border border-mist-400/25 shadow-inner">Muichiro</span>
+            <i data-lucide="heart" class="w-4 h-4 text-mist-300 fill-mist-300/50 animate-pulse"></i>
+            <span class="px-5 py-1.5 rounded-full bg-mist-900/60 border border-mist-400/25 shadow-inner">Yuui</span>
+        </div>
+
+        <!-- Tombol Scroll ke Bawah -->
+        <a href="#kisah" class="mt-14 flex flex-col items-center gap-2 text-mist-300/75 hover:text-mist-200 transition-colors group">
+            <span class="text-xs tracking-[0.2em] uppercase">Telusuri Kisah Kita</span>
+            <div class="w-7 h-11 rounded-full border border-mist-300/35 flex items-start justify-center p-2">
+                <div class="w-1.5 h-2.5 bg-mist-300 rounded-full animate-bounce"></div>
+            </div>
+        </a>
+    </header>
+
+    <!-- 2. LINI MASA PERJALANAN CINTA -->
+    <section id="kisah" class="relative py-24 px-6 max-w-5xl mx-auto z-10">
+        <div class="text-center mb-20 reveal">
+            <span class="text-mist-300 text-xs tracking-[0.25em] uppercase font-medium">Lembaran Waktu</span>
+            <h2 class="font-display text-3xl sm:text-5xl text-white mt-2 font-semibold">Perjalanan Cinta Kita</h2>
+            <p class="text-slate-400 mt-3 max-w-lg mx-auto text-sm sm:text-base font-light">
+                Empat babak ketenangan ketika dua jiwa bertemu di antara tipisnya kabut pagi, lalu saling menggenggam selamanya.
+            </p>
+        </div>
+
+        <!-- Timeline Container -->
+        <div class="relative">
+            <!-- Garis Vertikal Tengah (Desktop) / Kiri (Mobile) -->
+            <div class="timeline-line absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 md:-translate-x-1/2"></div>
+
+            <!-- BAB 1: Pertemuan di Balik Kabut -->
+            <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between mb-16 reveal">
+                <div class="md:w-[45%] pl-12 md:pl-0 md:text-right md:pr-10">
+                    <span class="text-xs font-medium tracking-widest text-mist-300 uppercase">Bab Pertama</span>
+                    <h3 class="font-serif text-2xl sm:text-3xl text-white mt-1 mb-3 font-semibold">Pertemuan di Balik Kabut</h3>
+                    <div class="mist-glass mist-glass-hover rounded-2xl p-6 text-left md:text-right">
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
+                            Seperti seseorang yang terbiasa menatap langit kosong tanpa tujuan, aku tak pernah menyangka akan menemukan cahaya selembut dirimu. Saat pertama kali mataku tertuju padamu, Yuui, kabut yang selama ini menyelimuti pikiranku perlahan menipis. Senyummu adalah angin pertama yang menyapa hatiku dengan begitu tenang.
+                        </p>
+                    </div>
+                </div>
+                <div class="absolute left-4 md:left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-night-900 border-2 border-mist-300 flex items-center justify-center shadow-[0_0_18px_rgba(94,234,212,0.55)] mt-1 md:mt-0">
+                    <i data-lucide="cloud-fog" class="w-4 h-4 text-mist-200"></i>
+                </div>
+                <div class="hidden md:block md:w-[45%] pl-10">
+                    <p class="font-serif italic text-xl text-mist-200/75">"Di antara ribuan awan yang berlalu, hanya kamu yang membuatku ingin berhenti dan menatap lebih lama."</p>
+                </div>
+            </div>
+
+            <!-- BAB 2: Langit yang Mulai Cerah -->
+            <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between mb-16 reveal">
+                <div class="hidden md:block md:w-[45%] pr-10 text-right">
+                    <p class="font-serif italic text-xl text-mist-200/75">"Bersamamu, diam pun terasa seperti percakapan paling indah yang pernah ada."</p>
+                </div>
+                <div class="absolute left-4 md:left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-night-900 border-2 border-mist-300 flex items-center justify-center shadow-[0_0_18px_rgba(94,234,212,0.55)] mt-1 md:mt-0">
+                    <i data-lucide="sun" class="w-4 h-4 text-mist-200"></i>
+                </div>
+                <div class="md:w-[45%] pl-12 md:pl-10">
+                    <span class="text-xs font-medium tracking-widest text-mist-300 uppercase">Bab Kedua</span>
+                    <h3 class="font-serif text-2xl sm:text-3xl text-white mt-1 mb-3 font-semibold">Langit yang Mulai Cerah</h3>
+                    <div class="mist-glass mist-glass-hover rounded-2xl p-6">
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
+                            Hari demi hari berlalu, tawa dan ceritamu perlahan mengisi ruang-ruang sunyi dalam hidupku. Aku yang dulu pendiam dan sulit mengekspresikan rasa, tiba-tiba selalu menantikan kabar darimu. Bersamamu, hal-hal sederhana seperti melipat pesawat kertas dan menatap bentuk awan di sore hari berubah menjadi kenangan paling berharga.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BAB 3: Janji di Bawah Awan -->
+            <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between mb-16 reveal">
+                <div class="md:w-[45%] pl-12 md:pl-0 md:text-right md:pr-10">
+                    <span class="text-xs font-medium tracking-widest text-mist-300 uppercase">Bab Ketiga</span>
+                    <h3 class="font-serif text-2xl sm:text-3xl text-white mt-1 mb-3 font-semibold">Janji di Bawah Awan</h3>
+                    <div class="mist-glass mist-glass-hover rounded-2xl p-6 text-left md:text-right">
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
+                            Ketika senja perlahan turun dan awan berarak lembut di langit, aku sadar bahwa perasaan ini bukan sekadar singgah. Kamu telah menjadi rumah tempatku pulang, penenang di setiap badai, dan alasan di balik ketenanganku. Di bawah naungan awan putih itu, hatiku berjanji untuk selalu menjagamu dengan seluruh ketulusan yang kupunya.
+                        </p>
+                    </div>
+                </div>
+                <div class="absolute left-4 md:left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-night-900 border-2 border-mist-300 flex items-center justify-center shadow-[0_0_18px_rgba(94,234,212,0.55)] mt-1 md:mt-0">
+                    <i data-lucide="cloud" class="w-4 h-4 text-mist-200"></i>
+                </div>
+                <div class="hidden md:block md:w-[45%] pl-10">
+                    <p class="font-serif italic text-xl text-mist-200/75">"Meskipun ingatanku pernah rapuh, mencintaimu adalah kepastian paling abadi di dalam jiwaku."</p>
+                </div>
+            </div>
+
+            <!-- BAB 4: Selamanya Bersama Yuui -->
+            <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between reveal">
+                <div class="hidden md:block md:w-[45%] pr-10 text-right">
+                    <p class="font-serif italic text-xl text-mist-200/75">"Ke mana pun angin membawa awan berarak, tujuanku akan selalu berakhir di sisimu, Yuui."</p>
+                </div>
+                <div class="absolute left-4 md:left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-night-900 border-2 border-mist-300 flex items-center justify-center shadow-[0_0_18px_rgba(94,234,212,0.55)] mt-1 md:mt-0">
+                    <i data-lucide="infinity" class="w-4 h-4 text-mist-200"></i>
+                </div>
+                <div class="md:w-[45%] pl-12 md:pl-10">
+                    <span class="text-xs font-medium tracking-widest text-mist-300 uppercase">Bab Keempat</span>
+                    <h3 class="font-serif text-2xl sm:text-3xl text-white mt-1 mb-3 font-semibold">Selamanya Bersama Yuui</h3>
+                    <div class="mist-glass mist-glass-hover rounded-2xl p-6">
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
+                            Kisah kita tidak berhenti sampai di sini, Yuui. Masih ada ribuan pagi berkabut, ribuan langit biru cerah, dan ribuan mimpi yang ingin kuwujudkan bersamamu. Terima kasih telah memilih berjalan di sampingku. Mari terus menulis cerita ini, selamanya hanya aku dan kamu.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. INTERACTIVE "AWAN KENANGAN" (Klik Awan untuk Membuka Bisikan Hati) -->
+    <section id="awan-kenangan" class="relative py-24 px-6 max-w-5xl mx-auto z-10">
+        <div class="text-center mb-14 reveal">
+            <span class="text-mist-300 text-xs tracking-[0.25em] uppercase font-medium">Bisikan Hati</span>
+            <h2 class="font-display text-3xl sm:text-5xl text-white mt-2 font-semibold">Awan Kenangan untuk Yuui</h2>
+            <p class="text-slate-400 mt-3 max-w-lg mx-auto text-sm sm:text-base font-light">
+                Sentuh setiap gumpalan awan di bawah ini untuk membaca pesan rahasia yang kusimpan khusus untukmu.
+            </p>
+        </div>
+
+        <!-- Grid Kartu Awan Interaktif -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 reveal" id="cloudsGrid">
+            <!-- Dirender via JS -->
+        </div>
+    </section>
+
+    <!-- 4. GALERI HARAPAN & MOMEN ESTETIK -->
+    <section id="galeri-harapan" class="relative py-24 px-6 max-w-5xl mx-auto z-10">
+        <div class="text-center mb-14 reveal">
+            <span class="text-mist-300 text-xs tracking-[0.25em] uppercase font-medium">Lukisan Masa Depan</span>
+            <h2 class="font-display text-3xl sm:text-5xl text-white mt-2 font-semibold">Galeri Harapan Kita</h2>
+            <p class="text-slate-400 mt-3 max-w-lg mx-auto text-sm sm:text-base font-light">
+                Potret mimpi-mimpi tenang yang ingin kulukis di langit masa depan bersamamu, Yuui.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 reveal">
+            <!-- Kartu Harapan 1 -->
+            <div class="mist-glass mist-glass-hover rounded-3xl p-6 flex flex-col justify-between group">
+                <div>
+                    <!-- Ilustrasi SVG Kabut & Bulan Sabit -->
+                    <div class="h-44 rounded-2xl bg-gradient-to-br from-night-900 via-mist-950 to-teal-950 border border-mist-300/15 mb-5 flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(94,234,212,0.2),transparent_70%)]"></div>
+                        <svg class="w-24 h-24 text-mist-200/80 group-hover:scale-110 transition-transform duration-700" viewBox="0 0 100 100" fill="none">
+                            <path d="M62 22C47 22 35 34 35 49C35 64 47 76 62 76C68 76 74 74 78 70C67 69 58 60 58 49C58 38 67 29 78 28C74 24 68 22 62 22Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M18 66H75M28 74H84M14 58H52" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.6"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs text-mist-300 uppercase tracking-widest">Harapan I</span>
+                    <h3 class="font-serif text-2xl text-white mt-1 mb-2 font-semibold">Menatap Langit Malam</h3>
+                    <p class="text-slate-300 text-sm font-light leading-relaxed">
+                        Duduk berdampingan di bawah langit berbintang yang sunyi, berbagi cerita tanpa perlu terburu-buru oleh waktu.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Kartu Harapan 2 -->
+            <div class="mist-glass mist-glass-hover rounded-3xl p-6 flex flex-col justify-between group">
+                <div>
+                    <!-- Ilustrasi SVG Origami Kertas -->
+                    <div class="h-44 rounded-2xl bg-gradient-to-br from-night-900 via-mist-950 to-emerald-950 border border-mist-300/15 mb-5 flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(167,243,208,0.2),transparent_70%)]"></div>
+                        <svg class="w-24 h-24 text-mist-200/80 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-700" viewBox="0 0 100 100" fill="none">
+                            <polygon points="15,50 85,20 62,80 48,55" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                            <polyline points="85,20 48,55 48,74 58,63" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs text-mist-300 uppercase tracking-widest">Harapan II</span>
+                    <h3 class="font-serif text-2xl text-white mt-1 mb-2 font-semibold">Ribuan Origami Harapan</h3>
+                    <p class="text-slate-300 text-sm font-light leading-relaxed">
+                        Melipat setiap doa baik menjadi pesawat dan bangau kertas, menerbangkannya tinggi agar kebahagiaan selalu memelukmu.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Kartu Harapan 3 -->
+            <div class="mist-glass mist-glass-hover rounded-3xl p-6 flex flex-col justify-between group">
+                <div>
+                    <!-- Ilustrasi SVG Pagi Berkabut & Cahaya -->
+                    <div class="h-44 rounded-2xl bg-gradient-to-br from-night-900 via-mist-950 to-cyan-950 border border-mist-300/15 mb-5 flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(45,212,191,0.22),transparent_70%)]"></div>
+                        <svg class="w-24 h-24 text-mist-200/80 group-hover:scale-110 transition-transform duration-700" viewBox="0 0 100 100" fill="none">
+                            <circle cx="50" cy="46" r="16" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M22 64C30 58 42 58 50 64C58 70 70 70 78 64" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M18 73C28 67 40 67 50 73C60 79 72 79 82 73" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.65"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs text-mist-300 uppercase tracking-widest">Harapan III</span>
+                    <h3 class="font-serif text-2xl text-white mt-1 mb-2 font-semibold">Menua di Bawah Awan</h3>
+                    <p class="text-slate-300 text-sm font-light leading-relaxed">
+                        Tetap menggenggam tanganmu dengan hangat, dari pagi yang masih berkabut hingga senja kehidupan kita nanti.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. SURAT CINTA INTERAKTIF YANG BISA DIKLIK / DIBUKA -->
+    <section id="surat-cinta" class="relative py-24 px-6 max-w-3xl mx-auto z-10 reveal">
+        <div class="text-center mb-10">
+            <span class="text-mist-300 text-xs tracking-[0.25em] uppercase font-medium">Pesan Terdalam</span>
+            <h2 class="font-display text-3xl sm:text-5xl text-white mt-2 font-semibold">Surat Cinta untuk Yuui</h2>
+            <p class="text-slate-400 mt-2 text-sm sm:text-base font-light">
+                Klik amplop berkabut di bawah ini untuk membuka surat yang kutulis sepenuh hati.
+            </p>
+        </div>
+
+        <div id="interactiveEnvelope" onclick="toggleLoveLetter()" class="mist-glass rounded-3xl p-7 sm:p-10 border border-mist-300/35 cursor-pointer transition-all duration-500 hover:border-mist-300/60 relative overflow-hidden">
+            <!-- Dekorasi Cahaya Sudut -->
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-mist-400/15 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-emerald-400/15 rounded-full blur-2xl pointer-events-none"></div>
+
+            <!-- Header Amplop -->
+            <div class="flex flex-col items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-mist-400/15 border border-mist-300/35 flex items-center justify-center text-mist-200 mb-4 shadow-[0_0_25px_rgba(94,234,212,0.25)]">
+                    <i id="envelopeIcon" data-lucide="mail" class="w-7 h-7 transition-transform duration-500"></i>
+                </div>
+                <span class="text-xs tracking-[0.2em] uppercase text-mist-300 font-medium">Untuk: Yuui Tersayang</span>
+                <h3 class="font-serif italic text-2xl sm:text-3xl text-white mt-1">
+                    "Cahaya di Dalam Kabutku"
+                </h3>
+                <button type="button" id="envelopeBtnText" class="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-mist-400/20 hover:bg-mist-400/30 text-mist-100 text-xs sm:text-sm font-medium transition-colors">
+                    <span>Buka Surat Cinta</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Isi Surat yang Terbuka saat Diklik -->
+            <div class="letter-sheet border-t border-mist-300/20 pt-6 text-left sm:text-center">
+                <div class="space-y-4 text-slate-200 text-sm sm:text-base leading-relaxed font-light max-w-2xl mx-auto">
+                    <p>
+                        Hai <span class="text-mist-200 font-medium">Yuui</span>,
+                    </p>
+                    <p>
+                        Jika suatu hari dunia terasa terlalu bising atau kabut terasa terlalu tebal menutupi langkahmu, ingatlah bahwa ada seseorang di sini yang selalu mendoakan kebahagiaanmu dalam diam maupun terang.
+                    </p>
+                    <p>
+                        Sebelum mengenalmu, hidupku terasa seperti awan yang melayang tanpa tujuan pasti. Namun sejak kamu hadir, setiap hembusan angin memiliki arti, dan setiap detik bersamamu adalah kenangan yang ingin kusimpan selamanya di sudut terdalam ingatanku.
+                    </p>
+                    <p class="font-serif italic text-xl text-mist-200 pt-2">
+                        "Aku mencintaimu dengan cara yang paling tenang, paling dalam, dan tak akan pernah pudar oleh waktu."
+                    </p>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-mist-300/15 flex flex-col items-center">
+                    <p class="font-serif italic text-lg text-mist-200/90">Selamanya milikmu,</p>
+                    <p class="font-display text-2xl font-semibold text-white mt-1 tracking-wider">Muichiro</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="relative py-10 px-6 text-center text-slate-400 text-xs sm:text-sm z-10 border-t border-mist-300/10">
+        <div class="flex items-center justify-center gap-2 text-mist-200/85 mb-2">
+            <span>Diabadikan dengan sepenuh hati untuk</span>
+            <span class="font-serif italic text-lg text-mist-200">Yuui</span>
+            <span>— Dari</span>
+            <span class="font-serif italic text-lg text-mist-200">Muichiro</span>
+        </div>
+        <p class="text-slate-500 text-xs">Di antara kabut, awan, &amp; origami kertas &bull; Selamanya</p>
+    </footer>
+
+    <!-- MODAL POPUP UNTUK PESAN AWAN KENANGAN -->
+    <div id="cloudModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-night-950/80 backdrop-blur-md transition-opacity duration-300" onclick="if(event.target === this) closeCloudModal()">
+        <div class="mist-glass rounded-3xl max-w-md w-full p-7 sm:p-8 relative border border-mist-300/40 transform scale-95 transition-transform duration-300" id="modalContent">
+            <button onclick="closeCloudModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer" aria-label="Tutup pesan">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="w-12 h-12 rounded-2xl bg-mist-400/15 border border-mist-300/30 flex items-center justify-center mb-5 text-mist-200">
+                <i id="modalIcon" data-lucide="cloud" class="w-6 h-6"></i>
+            </div>
+
+            <span id="modalSubtitle" class="text-xs tracking-widest uppercase text-mist-300 font-medium">Awan Kenangan</span>
+            <h3 id="modalTitle" class="font-serif text-2xl sm:text-3xl text-white mt-1 mb-4 font-semibold">Judul Awan</h3>
+            
+            <p id="modalMessage" class="text-slate-200 text-sm sm:text-base leading-relaxed font-light italic">
+                "Isi pesan romantis..."
+            </p>
+
+            <div class="mt-6 pt-4 border-t border-mist-300/15 flex justify-between items-center text-xs text-mist-300/80">
+                <span>— Muichiro untuk Yuui</span>
+                <button onclick="closeCloudModal()" class="px-4 py-1.5 rounded-full bg-mist-400/20 hover:bg-mist-400/35 text-mist-100 transition-colors cursor-pointer">
+                    Simpan di Hati
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT: Partikel Kabut & Origami Terbang, Interaktivitas & Musik Ambient Web Audio API -->
+    <script>
+        // 1. Inisialisasi Ikon Lucide
+        lucide.createIcons();
+
+        // 2. Data Awan Kenangan (Pesan Romantis Muichiro untuk Yuui)
+        const memoryClouds = [
+            {
+                id: 1,
+                icon: "cloud",
+                tag: "Awan Pertama",
+                title: "Tentang Senyummu",
+                preview: "Sentuh awan ini untuk membuka bisikan...",
+                message: "Yuui, tahukah kamu? Setiap kali kamu tersenyum, rasanya seperti melihat cahaya pagi menembus kabut paling tebal sekalipun. Jangan pernah kehilangan senyum indah itu, karena di sanalah letak bahagiaku."
+            },
+            {
+                id: 2,
+                icon: "sparkles",
+                tag: "Awan Kedua",
+                title: "Satu-Satunya yang Kuingat",
+                preview: "Sentuh awan ini untuk membuka bisikan...",
+                message: "Dulu aku sering lupa pada banyak hal yang berlalu begitu saja seperti angin. Tapi tentangmu—suaramu, tawamu, dan cara matamu berbinar—semuanya terukir jelas dan tak akan pernah pudar."
+            },
+            {
+                id: 3,
+                icon: "wind",
+                tag: "Awan Ketiga",
+                title: "Ketenangan di Sisimu",
+                preview: "Sentuh awan ini untuk membuka bisikan...",
+                message: "Bersamamu, aku tidak perlu berpura-pura menjadi siapa pun. Keheningan di sampingmu terasa jauh lebih hangat daripada keramaian mana pun di dunia ini, Yuui."
+            },
+            {
+                id: 4,
+                icon: "send",
+                tag: "Awan Keempat",
+                title: "Origami Kertas",
+                preview: "Sentuh awan ini untuk membuka bisikan...",
+                message: "Setiap kertas yang kulipat selalu kuberi satu harapan sederhana: semoga ke mana pun angin membawamu melangkah, kebahagiaan dan ketenangan selalu memelukmu erat."
+            },
+            {
+                id: 5,
+                icon: "moon",
+                tag: "Awan Kelima",
+                title: "Rindu di Balik Malam",
+                preview: "Sentuh awan ini untuk membuka bisikan...",
+                message: "Ketika malam tiba dan kabut turun perlahan, menatap langit selalu mengingatkanku padamu. Sejauh apa pun jarak memisahkan, kita tetap bernapas di bawah langit yang sama."
+            },
+            {
+                id: 6,
+                icon: "heart",
+                tag: "Awan Keenam",
+                title: "Selamanya Yuui",
+                preview: "Sentuh awan ini untuk membuka bisikan...",
+                message: "Terima kasih telah hadir dan memberi warna mint yang lembut pada hidupku yang dulunya kelabu. Tetaplah di sini bersamaku, hari ini, esok, dan selamanya."
+            }
+        ];
+
+        // Render Kartu Awan Kenangan
+        const cloudsGrid = document.getElementById('cloudsGrid');
+        memoryClouds.forEach((cloud) => {
+            const card = document.createElement('div');
+            card.className = 'mist-glass mist-glass-hover rounded-3xl p-6 cursor-pointer group relative overflow-hidden';
+            card.onclick = () => openCloudModal(cloud);
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-11 h-11 rounded-2xl bg-mist-400/15 border border-mist-300/25 flex items-center justify-center text-mist-200 group-hover:scale-110 transition-transform">
+                        <i data-lucide="${cloud.icon}" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-[11px] tracking-widest uppercase text-mist-300/80">${cloud.tag}</span>
+                </div>
+                <h3 class="font-serif text-2xl text-white font-semibold mb-2 group-hover:text-mist-200 transition-colors">${cloud.title}</h3>
+                <p class="text-slate-400 text-xs sm:text-sm font-light flex items-center gap-1.5">
+                    <span>${cloud.preview}</span>
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-mist-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                </p>
+            `;
+            cloudsGrid.appendChild(card);
+        });
+        lucide.createIcons();
+
+        // 3. Fungsi Modal Awan Kenangan
+        const cloudModal = document.getElementById('cloudModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function openCloudModal(cloud) {
+            document.getElementById('modalSubtitle').textContent = cloud.tag;
+            document.getElementById('modalTitle').textContent = cloud.title;
+            document.getElementById('modalMessage').textContent = `"${cloud.message}"`;
+            
+            const iconEl = document.getElementById('modalIcon');
+            iconEl.setAttribute('data-lucide', cloud.icon);
+            lucide.createIcons();
+
+            cloudModal.classList.remove('hidden');
+            cloudModal.classList.add('flex');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeCloudModal() {
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                cloudModal.classList.add('hidden');
+                cloudModal.classList.remove('flex');
+            }, 200);
+        }
+
+        // 4. Interaksi Surat Cinta (Buka/Tutup Amplop)
+        let isLetterOpen = false;
+        function toggleLoveLetter() {
+            const envelope = document.getElementById('interactiveEnvelope');
+            const btnText = document.getElementById('envelopeBtnText');
+            const envIcon = document.getElementById('envelopeIcon');
+            
+            isLetterOpen = !isLetterOpen;
+            if (isLetterOpen) {
+                envelope.classList.add('envelope-open');
+                btnText.innerHTML = '<span>Tutup Surat Cinta</span><i data-lucide="chevron-up" class="w-4 h-4"></i>';
+                envIcon.setAttribute('data-lucide', 'mail-open');
+            } else {
+                envelope.classList.remove('envelope-open');
+                btnText.innerHTML = '<span>Buka Surat Cinta</span><i data-lucide="chevron-down" class="w-4 h-4"></i>';
+                envIcon.setAttribute('data-lucide', 'mail');
+            }
+            lucide.createIcons();
+        }
+
+        // 5. Scroll Reveal Animation
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            revealElements.forEach((el) => {
+                const elementTop = el.getBoundingClientRect().top;
+                if (elementTop < windowHeight - 80) {
+                    el.classList.add('active');
+                }
+            });
+        };
+        window.addEventListener('scroll', revealOnScroll);
+        window.addEventListener('load', revealOnScroll);
+
+        // 6. Canvas Animasi Kabut Melayang & Origami Pesawat Kertas Terbang
+        const canvas = document.getElementById('mistCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let origamis = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class MistParticle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 2.5 + 0.8;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.speedY = -Math.random() * 0.35 - 0.1;
+                this.alpha = Math.random() * 0.5 + 0.15;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.y < -10 || this.x < -10 || this.x > canvas.width + 10) {
+                    this.reset();
+                    this.y = canvas.height + 10;
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(153, 246, 228, ${this.alpha})`;
+                ctx.fill();
+            }
+        }
+
+        class OrigamiPlane {
+            constructor() {
+                this.reset(true);
+            }
+            reset(initial = false) {
+                this.x = initial ? Math.random() * canvas.width : -40;
+                this.y = Math.random() * (canvas.height * 0.85) + 40;
+                this.size = Math.random() * 7 + 8;
+                this.speedX = Math.random() * 0.55 + 0.35;
+                this.waveOffset = Math.random() * Math.PI * 2;
+                this.alpha = Math.random() * 0.28 + 0.12;
+            }
+            update(time) {
+                this.x += this.speedX;
+                this.y += Math.sin(time * 0.0015 + this.waveOffset) * 0.35;
+                if (this.x > canvas.width + 50) {
+                    this.reset(false);
+                }
+            }
+            draw(time) {
+                const angle = Math.cos(time * 0.0015 + this.waveOffset) * 0.15;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.moveTo(this.size, 0);
+                ctx.lineTo(-this.size, -this.size * 0.55);
+                ctx.lineTo(-this.size * 0.55, 0);
+                ctx.lineTo(-this.size, this.size * 0.55);
+                ctx.closePath();
+                ctx.fillStyle = `rgba(204, 251, 241, ${this.alpha})`;
+                ctx.fill();
+                ctx.strokeStyle = `rgba(94, 234, 212, ${this.alpha + 0.15})`;
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function initCanvasElements() {
+            const particleCount = Math.min(55, Math.floor(window.innerWidth / 22));
+            particles = Array.from({ length: particleCount }, () => new MistParticle());
+            origamis = Array.from({ length: 6 }, () => new OrigamiPlane());
+        }
+
+        function animateCanvas(time) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            origamis.forEach(o => {
+                o.update(time);
+                o.draw(time);
+            });
+            requestAnimationFrame(animateCanvas);
+        }
+
+        window.onload = function() {
+            initCanvasElements();
+            requestAnimationFrame(animateCanvas);
+            revealOnScroll();
+        };
+
+        // 7. Pemutar Musik Ambient Menenangkan (Web Audio API - Tanpa File Eksternal)
+        let audioCtx = null;
+        let isPlayingMusic = false;
+        let melodyInterval = null;
+
+        // Tangga nada pentatonik Jepang yang lembut & menenangkan (D Mayor / B Minor Pentatonic)
+        const peacefulNotes = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25];
+
+        function playSoftChime(freq) {
+            if (!audioCtx || !isPlayingMusic) return;
+            const now = audioCtx.currentTime;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+
+            // Amplop suara lembut seperti lonceng angin kabut
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.045, now + 0.6);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.2);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 4.3);
+        }
+
+        function toggleAmbientMusic() {
+            const label = document.getElementById('musicLabel');
+            const eqBars = document.querySelectorAll('#musicEqualizer span');
+
+            if (!isPlayingMusic) {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                isPlayingMusic = true;
+                label.textContent = 'Jeda Melodi';
+                eqBars.forEach(bar => bar.classList.add('animate-pulse'));
+
+                // Mainkan nada pembuka lembut
+                playSoftChime(293.66);
+                setTimeout(() => playSoftChime(440.00), 600);
+
+                melodyInterval = setInterval(() => {
+                    const randomNote = peacefulNotes[Math.floor(Math.random() * peacefulNotes.length)];
+                    playSoftChime(randomNote);
+                }, 2200);
+            } else {
+                isPlayingMusic = false;
+                label.textContent = 'Putar Melodi';
+                eqBars.forEach(bar => bar.classList.remove('animate-pulse'));
+                clearInterval(melodyInterval);
+            }
+        }
+    </script>
+</body>
+</html>
